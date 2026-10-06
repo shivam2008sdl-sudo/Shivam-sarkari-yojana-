@@ -1,0 +1,75 @@
+const express = require("express");
+const OpenAI = require("openai");
+require("dotenv").config();
+
+const app = express();
+
+app.use(express.json());
+app.use(express.static("."));
+
+const groq = new OpenAI({
+  apiKey: process.env.GROQ_API_KEY,
+  baseURL: "https://api.groq.com/openai/v1"
+});
+
+app.post("/api/schemes", async (req, res) => {
+
+  try {
+
+    const question = req.body.question;
+
+    if (!question) {
+      return res.status(400).json({
+        error: "सवाल आवश्यक है।"
+      });
+    }
+
+    const response = await groq.responses.create({
+
+      model: "openai/gpt-oss-120b",
+
+      input: `
+आप भारत की सरकारी योजनाओं के लिए एक हिंदी AI सहायक हैं।
+
+यूज़र का सवाल:
+${question}
+
+उत्तर हिंदी में दें।
+
+हर योजना के लिए:
+1. योजना का नाम
+2. योजना किसके लिए है
+3. मुख्य लाभ
+4. पात्रता
+5. आवश्यक दस्तावेज
+6. आवेदन कैसे करें
+7. आधिकारिक सरकारी वेबसाइट
+
+महत्वपूर्ण:
+- अनुमानित या झूठी जानकारी न दें।
+- जहाँ जानकारी निश्चित न हो वहाँ स्पष्ट रूप से बताएं।
+- आवेदन करने से पहले आधिकारिक सरकारी पोर्टल पर जानकारी सत्यापित करने को कहें।
+- किसी योजना की पात्रता यूज़र की व्यक्तिगत जानकारी के बिना निश्चित न बताएं।
+      `
+
+    });
+
+    res.json({
+      answer: response.output_text
+    });
+
+  } catch (error) {
+
+    console.error(error);
+
+    res.status(500).json({
+      error: "Groq API से उत्तर प्राप्त नहीं हो सका।"
+    });
+
+  }
+
+});
+
+app.listen(3000, () => {
+  console.log("Website running at http://localhost:3000");
+});GROQ_API_KEY= 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
